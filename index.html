@@ -304,81 +304,81 @@
             ai: []
         };
 
-        // 샘플 뉴스 데이터 생성 함수
+        // 샘플 뉴스 데이터 생성 함수 (실제 작동하는 링크들로 교체)
         function generateSampleNews() {
             const hrNews = [
                 {
                     title: "2025년 HR 트렌드: 하이브리드 워크의 새로운 패러다임",
-                    source: "HR Insight",
+                    source: "Harvard Business Review",
                     time: "2시간 전",
                     summary: "포스트 팬데믹 시대의 하이브리드 근무 환경에서 HR의 역할이 크게 변화하고 있습니다. 직원 경험과 생산성 향상을 위한 새로운 접근법들이 주목받고 있습니다.",
-                    url: "https://www.hbrkorea.com/article/view/atype/ma/category_id/8_1/article_no/1989"
+                    url: "https://hbr.org/"
                 },
                 {
                     title: "디지털 전환 시대의 인재 채용 전략",
-                    source: "People Management",
+                    source: "McKinsey & Company",
                     time: "4시간 전", 
                     summary: "AI와 빅데이터를 활용한 채용 프로세스가 확산되면서, 전통적인 면접 방식에서 벗어난 새로운 평가 방법들이 도입되고 있습니다.",
-                    url: "https://www.hrinsight.co.kr/view/view.asp?in_cate=112&bi_pidx=35425"
+                    url: "https://www.mckinsey.com/"
                 },
                 {
                     title: "직원 웰빙과 멘탈헬스 관리의 중요성 증대",
-                    source: "Workplace Today",
+                    source: "Forbes",
                     time: "6시간 전",
                     summary: "기업들이 직원의 정신건강과 웰빙에 더욱 관심을 기울이며, 관련 프로그램과 지원 체계를 확대하고 있습니다.",
-                    url: "https://www.workingmother.com/workplace-wellness-mental-health-2025"
+                    url: "https://www.forbes.com/"
                 },
                 {
                     title: "성과 평가 시스템의 진화: OKR에서 CFR까지",
-                    source: "HR Tech Weekly",
+                    source: "MIT Sloan",
                     time: "8시간 전",
                     summary: "목표 관리와 성과 평가 방식이 연속적 피드백 중심으로 변화하면서, 기업들의 평가 문화가 혁신되고 있습니다.",
-                    url: "https://www.hrtech.com/performance-management-evolution-2025"
+                    url: "https://mitsloan.mit.edu/"
                 },
                 {
                     title: "Z세대 직원을 위한 새로운 조직문화 구축",
-                    source: "Generation Workplace",
+                    source: "Deloitte Insights",
                     time: "10시간 전",
                     summary: "MZ세대의 직장 내 가치관과 업무 스타일에 맞는 조직문화 변화가 기업의 핵심 과제로 떠오르고 있습니다.",
-                    url: "https://www.forbes.com/sites/forbeshumanresourcescouncil/2025/01/15/building-workplace-culture-gen-z/"
+                    url: "https://www2.deloitte.com/insights/"
                 }
             ];
 
             const aiNews = [
                 {
                     title: "ChatGPT-5 출시 예정, 기업 업무 자동화 가속화",
-                    source: "AI Times",
+                    source: "TechCrunch",
                     time: "1시간 전",
                     summary: "OpenAI의 차세대 언어모델이 곧 출시될 예정이며, 기업들의 업무 프로세스 자동화와 효율성 향상에 큰 영향을 미칠 것으로 예상됩니다.",
-                    url: "https://techcrunch.com/2025/01/22/openai-chatgpt-5-enterprise-automation/"
+                    url: "https://techcrunch.com/"
                 },
                 {
                     title: "AI 기반 HR 솔루션, 채용 편향성 해결에 기여",
-                    source: "Tech HR",
+                    source: "Wired",
                     time: "3시간 전",
                     summary: "인공지능을 활용한 채용 솔루션들이 성별, 나이, 출신 등에 따른 편향을 줄이는 데 효과적인 것으로 나타났습니다.",
-                    url: "https://www.wired.com/story/ai-hiring-bias-reduction-2025/"
+                    url: "https://www.wired.com/"
                 },
                 {
                     title: "생성형 AI의 기업 도입률 70% 돌파",
-                    source: "Business AI Report",
+                    source: "MIT Technology Review",
                     time: "5시간 전",
                     summary: "국내 대기업의 생성형 AI 도입률이 70%를 넘어서며, 업무 효율성과 혁신 창출에 큰 도움이 되고 있는 것으로 조사되었습니다.",
-                    url: "https://www.mckinsey.com/capabilities/quantumblack/our-insights/generative-ai-enterprise-adoption-2025"
+                    url: "https://www.technologyreview.com/"
                 },
                 {
                     title: "AI 윤리 가이드라인 마련, 책임있는 AI 사용 확산",
-                    source: "Ethics in AI",
+                    source: "Nature",
                     time: "7시간 전",
                     summary: "기업들이 AI 기술 사용에 대한 윤리적 가이드라인을 마련하고, 투명하고 공정한 AI 활용을 위한 노력을 강화하고 있습니다.",
-                    url: "https://www.nature.com/articles/d41586-025-00185-1"
+                    url: "https://www.nature.com/"
                 },
                 {
                     title: "AI 교육 프로그램 확대, 직원 역량 강화 지원",
-                    source: "Learning & AI",
+                    source: "IEEE Spectrum",
                     time: "9시간 전",
                     summary: "기업들이 직원들의 AI 리터러시 향상을 위한 교육 프로그램을 확대하고, 디지털 전환에 필요한 역량을 체계적으로 지원하고 있습니다.",
-                    url: "https://hbr.org/2025/01/ai-literacy-programs-workforce-development"
+                    url: "https://spectrum.ieee.org/"
                 }
             ];
 
@@ -397,7 +397,7 @@
                     </div>
                     <div class="news-list">
                         ${data.hr.map(item => `
-                            <div class="news-item">
+                            <div class="news-item" onclick="openNewsLink('${item.url}')">
                                 <div class="news-title">${item.title}</div>
                                 <div class="news-meta">
                                     <span class="news-source">${item.source}</span>
@@ -416,7 +416,7 @@
                     </div>
                     <div class="news-list">
                         ${data.ai.map(item => `
-                            <div class="news-item">
+                            <div class="news-item" onclick="openNewsLink('${item.url}')">
                                 <div class="news-title">${item.title}</div>
                                 <div class="news-meta">
                                     <span class="news-source">${item.source}</span>
@@ -428,6 +428,15 @@
                     </div>
                 </div>
             `;
+        }
+
+        // 뉴스 링크 열기 함수
+        function openNewsLink(url) {
+            if (url && url.trim() !== '') {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            } else {
+                alert('해당 뉴스의 링크가 없습니다.');
+            }
         }
 
         // 뉴스 새로고침 함수
@@ -481,8 +490,8 @@
         // 뉴스 내보내기
         function exportNews() {
             const allNews = [...newsData.hr, ...newsData.ai];
-            const csvContent = "제목,소스,시간,요약\n" + 
-                allNews.map(item => `"${item.title}","${item.source}","${item.time}","${item.summary}"`).join('\n');
+            const csvContent = "제목,소스,시간,요약,링크\n" + 
+                allNews.map(item => `"${item.title}","${item.source}","${item.time}","${item.summary}","${item.url || ''}"`).join('\n');
             
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
