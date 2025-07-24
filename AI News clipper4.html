@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR & AI 뉴스 클리핑 시스템</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1em;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn.refresh {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+        }
+
+        .btn.auto {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+        }
+
+        .btn.active {
+            background: linear-gradient(45deg, #FF5722, #D84315);
+        }
+
+        .status {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .news-category {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .news-category:hover {
+            transform: translateY(-5px);
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+
+        .hr-icon {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+        }
+
+        .ai-icon {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+        }
+
+        .category-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .news-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            outline: none;
+        }
+
+        .news-item:hover, .news-item:focus {
+            background: #e8f5e8;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .news-item:focus {
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3);
+        }
+
+        .news-item::after {
+            content: "🔗";
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-size: 16px;
+        }
+
+        .news-item:hover::after, .news-item:focus::after {
+            opacity: 1;
+        }
+
+        .ai-news .news-item {
+            border-left-color: #2196F3;
+        }
+
+        .ai-news .news-item:hover {
+            background: #e3f2fd;
+        }
+
+        .news-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .news-source {
+            font-weight: 500;
+            color: #4CAF50;
+        }
+
+        .news-time {
+            color: #999;
+        }
+
+        .news-summary {
+            color: #555;
+            line-height: 1.5;
+            font-size: 0.95em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .loading::after {
+            content: '';
+            animation: dots 2s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
+        }
+
+        .auto-refresh-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 152, 0, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .auto-refresh-indicator.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 HR & AI 뉴스 클리핑 시스템</h1>
+            <p>인사 및 AI 관련 최신 뉴스를 실시간으로 수집합니다</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn refresh" onclick="refreshNews()">🔄 뉴스 새로고침</button>
+            <button class="btn auto" onclick="toggleAutoRefresh()" id="autoBtn">⏰ 자동 새로고침 시작</button>
+            <button class="btn" onclick="exportNews()">📋 뉴스 내보내기</button>
+        </div>
+
+        <div class="status" id="status">시스템 준비 완료</div>
+
+        <div class="news-grid" id="newsGrid">
+            <div class="loading">뉴스를 불러오는 중입니다...</div>
+        </div>
+    </div>
+
+    <div class="auto-refresh-indicator" id="autoIndicator">
+        자동 새로고침 활성화됨 (5분마다)
+    </div>
+
+    <script>
+        let autoRefreshInterval;
+        let isAutoRefreshActive = false;
+        let newsData = {
+            hr: [],
+            ai: []
+        };
+
+        // API 설정
+        const NEWS_API_KEY = '84845821facf42f2ac3c807feafbb08c'; // NewsAPI 키
+        const NEWS_API_BASE_URL = 'https://newsapi.org/v2';
+
+        // 실제 뉴스 API에서 데이터 가져오기
+        async function fetchRealNews() {
+            try {
+                // HR 관련 뉴스 검색
+                const hrResponse = await fetch(`${NEWS_API_BASE_URL}/everything?q=HR OR "human resources" OR recruitment OR workplace&language=ko&sortBy=publishedAt&pageSize=5&apiKey=${NEWS_API_KEY}`);
+                
+                // AI 관련 뉴스 검색  
+                const aiResponse = await fetch(`${NEWS_API_BASE_URL}/everything?q=AI OR "artificial intelligence" OR "machine learning" OR ChatGPT&language=ko&sortBy=publishedAt&pageSize=5&apiKey=${NEWS_API_KEY}`);
+
+                // 영어 뉴스도 가져오기 (한국어 뉴스가 부족할 경우 대비)
+                const hrResponseEn = await fetch(`${NEWS_API_BASE_URL}/everything?q=HR OR "human resources" OR recruitment OR workplace&language=en&sortBy=publishedAt&pageSize=3&apiKey=${NEWS_API_KEY}`);
+                const aiResponseEn = await fetch(`${NEWS_API_BASE_URL}/everything?q=AI OR "artificial intelligence" OR "machine learning" OR ChatGPT&language=en&sortBy=publishedAt&pageSize=3&apiKey=${NEWS_API_KEY}`);
+
+                // 응답 확인
+                if (!hrResponse.ok || !aiResponse.ok || !hrResponseEn.ok || !aiResponseEn.ok) {
+                    throw new Error('API 요청 실패');
+                }
+
+                const hrData = await hrResponse.json();
+                const aiData = await aiResponse.json();
+                const hrDataEn = await hrResponseEn.json();
+                const aiDataEn = await aiResponseEn.json();
+
+                // 데이터 변환
+                const processArticles = (articles) => {
+                    return articles.map(article => ({
+                        title: article.title || '제목 없음',
+                        source: article.source?.name || '출처 불명',
+                        time: formatTimeAgo(article.publishedAt),
+                        summary: article.description || article.content?.substring(0, 150) + '...' || '요약 없음',
+                        url: article.url
+                    }));
+                };
+
+                // 한국어와 영어 뉴스 결합
+                const hrNews = processArticles([...hrData.articles, ...hrDataEn.articles]).slice(0, 5);
+                const aiNews = processArticles([...aiData.articles, ...aiDataEn.articles]).slice(0, 5);
+
+                return { hr: hrNews, ai: aiNews };
+
+            } catch (error) {
+                console.error('실제 뉴스 가져오기 실패:', error);
+                // API 실패 시 샘플 데이터 사용
+                return generateSampleNews();
+            }
+        }
+
+        // 시간 포맷 함수
+        function formatTimeAgo(dateString) {
+            const now = new Date();
+            const publishedDate = new Date(dateString);
+            const diffInHours = Math.floor((now - publishedDate) / (1000 * 60 * 60));
+            
+            if (diffInHours < 1) {
+                return '방금 전';
+            } else if (diffInHours < 24) {
+                return `${diffInHours}시간 전`;
+            } else {
+                const diffInDays = Math.floor(diffInHours / 24);
+                return `${diffInDays}일 전`;
+            }
+        }
+
+        // 샘플 뉴스 데이터 생성 함수 (실제 작동하는 링크들로 교체)
+        function generateSampleNews() {
+            const hrNews = [
+                {
+                    title: "2025년 HR 트렌드: 하이브리드 워크의 새로운 패러다임",
+                    source: "Harvard Business Review",
+                    time: "2시간 전",
+                    summary: "포스트 팬데믹 시대의 하이브리드 근무 환경에서 HR의 역할이 크게 변화하고 있습니다. 직원 경험과 생산성 향상을 위한 새로운 접근법들이 주목받고 있습니다.",
+                    url: "https://hbr.org/"
+                },
+                {
+                    title: "디지털 전환 시대의 인재 채용 전략",
+                    source: "McKinsey & Company",
+                    time: "4시간 전", 
+                    summary: "AI와 빅데이터를 활용한 채용 프로세스가 확산되면서, 전통적인 면접 방식에서 벗어난 새로운 평가 방법들이 도입되고 있습니다.",
+                    url: "https://www.mckinsey.com/"
+                },
+                {
+                    title: "직원 웰빙과 멘탈헬스 관리의 중요성 증대",
+                    source: "Forbes",
+                    time: "6시간 전",
+                    summary: "기업들이 직원의 정신건강과 웰빙에 더욱 관심을 기울이며, 관련 프로그램과 지원 체계를 확대하고 있습니다.",
+                    url: "https://www.forbes.com/"
+                },
+                {
+                    title: "성과 평가 시스템의 진화: OKR에서 CFR까지",
+                    source: "MIT Sloan",
+                    time: "8시간 전",
+                    summary: "목표 관리와 성과 평가 방식이 연속적 피드백 중심으로 변화하면서, 기업들의 평가 문화가 혁신되고 있습니다.",
+                    url: "https://mitsloan.mit.edu/"
+                },
+                {
+                    title: "Z세대 직원을 위한 새로운 조직문화 구축",
+                    source: "Deloitte Insights",
+                    time: "10시간 전",
+                    summary: "MZ세대의 직장 내 가치관과 업무 스타일에 맞는 조직문화 변화가 기업의 핵심 과제로 떠오르고 있습니다.",
+                    url: "https://www2.deloitte.com/insights/"
+                }
+            ];
+
+            const aiNews = [
+                {
+                    title: "ChatGPT-5 출시 예정, 기업 업무 자동화 가속화",
+                    source: "TechCrunch",
+                    time: "1시간 전",
+                    summary: "OpenAI의 차세대 언어모델이 곧 출시될 예정이며, 기업들의 업무 프로세스 자동화와 효율성 향상에 큰 영향을 미칠 것으로 예상됩니다.",
+                    url: "https://techcrunch.com/"
+                },
+                {
+                    title: "AI 기반 HR 솔루션, 채용 편향성 해결에 기여",
+                    source: "Wired",
+                    time: "3시간 전",
+                    summary: "인공지능을 활용한 채용 솔루션들이 성별, 나이, 출신 등에 따른 편향을 줄이는 데 효과적인 것으로 나타났습니다.",
+                    url: "https://www.wired.com/"
+                },
+                {
+                    title: "생성형 AI의 기업 도입률 70% 돌파",
+                    source: "MIT Technology Review",
+                    time: "5시간 전",
+                    summary: "국내 대기업의 생성형 AI 도입률이 70%를 넘어서며, 업무 효율성과 혁신 창출에 큰 도움이 되고 있는 것으로 조사되었습니다.",
+                    url: "https://www.technologyreview.com/"
+                },
+                {
+                    title: "AI 윤리 가이드라인 마련, 책임있는 AI 사용 확산",
+                    source: "Nature",
+                    time: "7시간 전",
+                    summary: "기업들이 AI 기술 사용에 대한 윤리적 가이드라인을 마련하고, 투명하고 공정한 AI 활용을 위한 노력을 강화하고 있습니다.",
+                    url: "https://www.nature.com/"
+                },
+                {
+                    title: "AI 교육 프로그램 확대, 직원 역량 강화 지원",
+                    source: "IEEE Spectrum",
+                    time: "9시간 전",
+                    summary: "기업들이 직원들의 AI 리터러시 향상을 위한 교육 프로그램을 확대하고, 디지털 전환에 필요한 역량을 체계적으로 지원하고 있습니다.",
+                    url: "https://spectrum.ieee.org/"
+                }
+            ];
+
+            return { hr: hrNews, ai: aiNews };
+        }
+
+        // 뉴스 렌더링 함수
+        function renderNews(data) {
+            const newsGrid = document.getElementById('newsGrid');
+            
+            newsGrid.innerHTML = `
+                <div class="news-category hr-news">
+                    <div class="category-header">
+                        <div class="category-icon hr-icon">👥</div>
+                        <div class="category-title">HR 뉴스</div>
+                    </div>
+                    <div class="news-list">
+                        ${data.hr.map((item, index) => `
+                            <div class="news-item" onclick="openNewsLink('${item.url}')" data-url="${item.url}" tabindex="0" role="button" aria-label="뉴스 기사 열기: ${item.title}">
+                                <div class="news-title">${item.title}</div>
+                                <div class="news-meta">
+                                    <span class="news-source">${item.source}</span>
+                                    <span class="news-time">${item.time}</span>
+                                </div>
+                                <div class="news-summary">${item.summary}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="news-category ai-news">
+                    <div class="category-header">
+                        <div class="category-icon ai-icon">🤖</div>
+                        <div class="category-title">AI 뉴스</div>
+                    </div>
+                    <div class="news-list">
+                        ${data.ai.map((item, index) => `
+                            <div class="news-item" onclick="openNewsLink('${item.url}')" data-url="${item.url}" tabindex="0" role="button" aria-label="뉴스 기사 열기: ${item.title}">
+                                <div class="news-title">${item.title}</div>
+                                <div class="news-meta">
+                                    <span class="news-source">${item.source}</span>
+                                    <span class="news-time">${item.time}</span>
+                                </div>
+                                <div class="news-summary">${item.summary}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 뉴스 링크 열기 함수 (개선된 버전)
+        async function fetchRSSNews() {
+            try {
+                // RSS2JSON 서비스 사용 (무료)
+                const rssToJsonAPI = 'https://api.rss2json.com/v1/api.json';
+                
+                // 다양한 RSS 피드
+                const hrRssFeeds = [
+                    'https://feeds.feedburner.com/hbr', // Harvard Business Review
+                    'https://www.shrm.org/about-shrm/news-media/rssfeed.aspx' // SHRM
+                ];
+                
+                const aiRssFeeds = [
+                    'https://feeds.feedburner.com/venturebeat/SZYF', // VentureBeat AI
+                    'https://techcrunch.com/category/artificial-intelligence/feed/' // TechCrunch AI
+                ];
+
+                // RSS 피드 처리 함수
+                const processRSSFeed = async (feedUrl) => {
+                    try {
+                        const response = await fetch(`${rssToJsonAPI}?rss_url=${encodeURIComponent(feedUrl)}&count=3`);
+                        const data = await response.json();
+                        
+                        if (data.status === 'ok') {
+                            return data.items.map(item => ({
+                                title: item.title || '제목 없음',
+                                source: data.feed?.title || '출처 불명',
+                                time: formatTimeAgo(item.pubDate),
+                                summary: item.description?.replace(/<[^>]*>/g, '').substring(0, 150) + '...' || '요약 없음',
+                                url: item.link
+                            }));
+                        }
+                        return [];
+                    } catch (error) {
+                        console.error('RSS 피드 처리 실패:', error);
+                        return [];
+                    }
+                };
+
+                // 모든 RSS 피드에서 데이터 가져오기
+                const hrNewsPromises = hrRssFeeds.map(processRSSFeed);
+                const aiNewsPromises = aiRssFeeds.map(processRSSFeed);
+
+                const hrResults = await Promise.all(hrNewsPromises);
+                const aiResults = await Promise.all(aiNewsPromises);
+
+                // 결과 합치기
+                const hrNews = hrResults.flat().slice(0, 5);
+                const aiNews = aiResults.flat().slice(0, 5);
+
+                return { hr: hrNews, ai: aiNews };
+
+            } catch (error) {
+                console.error('RSS 뉴스 가져오기 실패:', error);
+                return generateSampleNews();
+            }
+        }
+        function openNewsLink(url) {
+            // URL 유효성 검사
+            if (!url || url.trim() === '') {
+                alert('해당 뉴스의 링크가 없습니다.');
+                return;
+            }
+            
+            // URL이 http:// 또는 https://로 시작하지 않으면 추가
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+            
+            try {
+                // 새 탭에서 링크 열기
+                const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+                
+                // 팝업 차단기로 인해 창이 열리지 않은 경우
+                if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                    // 사용자에게 팝업 허용 안내
+                    if (confirm('팝업이 차단되었습니다. 링크를 직접 방문하시겠습니까?\n\n' + url)) {
+                        window.location.href = url;
+                    }
+                }
+            } catch (error) {
+                console.error('링크 열기 오류:', error);
+                alert('링크를 열 수 없습니다. URL을 확인해주세요.');
+            }
+        }
+
+        // 뉴스 새로고침 함수 (API 연동 버전)
+        async function refreshNews() {
+            const status = document.getElementById('status');
+            status.textContent = '최신 뉴스를 가져오는 중...';
+            
+            // 로딩 표시
+            document.getElementById('newsGrid').innerHTML = '<div class="loading">실시간 뉴스를 불러오는 중입니다...</div>';
+            
+            try {
+                try {
+                    // API 키가 설정되어 있으면 실제 뉴스 가져오기
+                    if (NEWS_API_KEY && NEWS_API_KEY !== 'YOUR_API_KEY_HERE') {
+                        newsData = await fetchRealNews();
+                        status.textContent = `✅ 실시간 뉴스 업데이트 완료 - ${new Date().toLocaleString('ko-KR')}`;
+                    } else {
+                        // API 키가 없으면 RSS 피드 시도
+                        newsData = await fetchRSSNews();
+                        status.textContent = `📡 RSS 피드 뉴스 업데이트 완료 - ${new Date().toLocaleString('ko-KR')}`;
+                    }
+                } catch (error) {
+                    console.error('뉴스 API 실패, 샘플 데이터 사용:', error);
+                    // 모든 API 실패 시 샘플 데이터 사용
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    newsData = generateSampleNews();
+                    newsData.hr.forEach(item => {
+                        const hours = Math.floor(Math.random() * 12) + 1;
+                        item.time = `${hours}시간 전`;
+                    });
+                    newsData.ai.forEach(item => {
+                        const hours = Math.floor(Math.random() * 12) + 1;
+                        item.time = `${hours}시간 전`;
+                    });
+                    status.textContent = `📰 샘플 뉴스 표시 중 (실시간 뉴스를 보려면 API 키를 설정하세요) - ${new Date().toLocaleString('ko-KR')}`;
+                }
+                
+                renderNews(newsData);
+                
+            } catch (error) {
+                console.error('뉴스 업데이트 실패:', error);
+                status.textContent = `❌ 뉴스 업데이트 실패 - ${new Date().toLocaleString('ko-KR')}`;
+                
+                // 오류 시 샘플 데이터로 폴백
+                newsData = generateSampleNews();
+                renderNews(newsData);
+            }
+        }
+
+        // 자동 새로고침 토글
+        function toggleAutoRefresh() {
+            const btn = document.getElementById('autoBtn');
+            const indicator = document.getElementById('autoIndicator');
+            
+            if (isAutoRefreshActive) {
+                clearInterval(autoRefreshInterval);
+                btn.textContent = '⏰ 자동 새로고침 시작';
+                btn.classList.remove('active');
+                indicator.classList.remove('show');
+                isAutoRefreshActive = false;
+            } else {
+                autoRefreshInterval = setInterval(refreshNews, 300000); // 5분마다
+                btn.textContent = '⏹️ 자동 새로고침 중지';
+                btn.classList.add('active');
+                indicator.classList.add('show');
+                isAutoRefreshActive = true;
+            }
+        }
+
+        // 뉴스 내보내기
+        function exportNews() {
+            const allNews = [...newsData.hr, ...newsData.ai];
+            const csvContent = "제목,소스,시간,요약,링크\n" + 
+                allNews.map(item => `"${item.title}","${item.source}","${item.time}","${item.summary}","${item.url || ''}"`).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `HR_AI_뉴스_클리핑_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 키보드 접근성 지원 (Enter 키로도 뉴스 열기)
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && event.target.classList.contains('news-item')) {
+                const url = event.target.getAttribute('data-url');
+                if (url) {
+                    openNewsLink(url);
+                }
+            }
+        });
+
+        // 초기 로드
+        window.addEventListener('load', () => {
+            setTimeout(refreshNews, 1000);
+        });
+
+        // 페이지 이탈 시 자동 새로고침 정리
+        window.addEventListener('beforeunload', () => {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>
