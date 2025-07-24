@@ -157,12 +157,17 @@
             transition: all 0.3s ease;
             cursor: pointer;
             position: relative;
+            outline: none;
         }
 
-        .news-item:hover {
+        .news-item:hover, .news-item:focus {
             background: #e8f5e8;
             transform: translateX(5px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .news-item:focus {
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3);
         }
 
         .news-item::after {
@@ -175,7 +180,7 @@
             font-size: 16px;
         }
 
-        .news-item:hover::after {
+        .news-item:hover::after, .news-item:focus::after {
             opacity: 1;
         }
 
@@ -304,6 +309,73 @@
             ai: []
         };
 
+        // API 설정
+        const NEWS_API_KEY = '84845821facf42f2ac3c807feafbb08c'; // NewsAPI 키
+        const NEWS_API_BASE_URL = 'https://newsapi.org/v2';
+
+        // 실제 뉴스 API에서 데이터 가져오기
+        async function fetchRealNews() {
+            try {
+                // HR 관련 뉴스 검색
+                const hrResponse = await fetch(`${NEWS_API_BASE_URL}/everything?q=HR OR "human resources" OR recruitment OR workplace&language=ko&sortBy=publishedAt&pageSize=5&apiKey=${NEWS_API_KEY}`);
+                
+                // AI 관련 뉴스 검색  
+                const aiResponse = await fetch(`${NEWS_API_BASE_URL}/everything?q=AI OR "artificial intelligence" OR "machine learning" OR ChatGPT&language=ko&sortBy=publishedAt&pageSize=5&apiKey=${NEWS_API_KEY}`);
+
+                // 영어 뉴스도 가져오기 (한국어 뉴스가 부족할 경우 대비)
+                const hrResponseEn = await fetch(`${NEWS_API_BASE_URL}/everything?q=HR OR "human resources" OR recruitment OR workplace&language=en&sortBy=publishedAt&pageSize=3&apiKey=${NEWS_API_KEY}`);
+                const aiResponseEn = await fetch(`${NEWS_API_BASE_URL}/everything?q=AI OR "artificial intelligence" OR "machine learning" OR ChatGPT&language=en&sortBy=publishedAt&pageSize=3&apiKey=${NEWS_API_KEY}`);
+
+                // 응답 확인
+                if (!hrResponse.ok || !aiResponse.ok || !hrResponseEn.ok || !aiResponseEn.ok) {
+                    throw new Error('API 요청 실패');
+                }
+
+                const hrData = await hrResponse.json();
+                const aiData = await aiResponse.json();
+                const hrDataEn = await hrResponseEn.json();
+                const aiDataEn = await aiResponseEn.json();
+
+                // 데이터 변환
+                const processArticles = (articles) => {
+                    return articles.map(article => ({
+                        title: article.title || '제목 없음',
+                        source: article.source?.name || '출처 불명',
+                        time: formatTimeAgo(article.publishedAt),
+                        summary: article.description || article.content?.substring(0, 150) + '...' || '요약 없음',
+                        url: article.url
+                    }));
+                };
+
+                // 한국어와 영어 뉴스 결합
+                const hrNews = processArticles([...hrData.articles, ...hrDataEn.articles]).slice(0, 5);
+                const aiNews = processArticles([...aiData.articles, ...aiDataEn.articles]).slice(0, 5);
+
+                return { hr: hrNews, ai: aiNews };
+
+            } catch (error) {
+                console.error('실제 뉴스 가져오기 실패:', error);
+                // API 실패 시 샘플 데이터 사용
+                return generateSampleNews();
+            }
+        }
+
+        // 시간 포맷 함수
+        function formatTimeAgo(dateString) {
+            const now = new Date();
+            const publishedDate = new Date(dateString);
+            const diffInHours = Math.floor((now - publishedDate) / (1000 * 60 * 60));
+            
+            if (diffInHours < 1) {
+                return '방금 전';
+            } else if (diffInHours < 24) {
+                return `${diffInHours}시간 전`;
+            } else {
+                const diffInDays = Math.floor(diffInHours / 24);
+                return `${diffInDays}일 전`;
+            }
+        }
+
         // 샘플 뉴스 데이터 생성 함수 (실제 작동하는 링크들로 교체)
         function generateSampleNews() {
             const hrNews = [
@@ -396,8 +468,8 @@
                         <div class="category-title">HR 뉴스</div>
                     </div>
                     <div class="news-list">
-                        ${data.hr.map(item => `
-                            <div class="news-item" onclick="openNewsLink('${item.url}')">
+                        ${data.hr.map((item, index) => `
+                            <div class="news-item" onclick="openNewsLink('${item.url}')" data-url="${item.url}" tabindex="0" role="button" aria-label="뉴스 기사 열기: ${item.title}">
                                 <div class="news-title">${item.title}</div>
                                 <div class="news-meta">
                                     <span class="news-source">${item.source}</span>
@@ -415,8 +487,8 @@
                         <div class="category-title">AI 뉴스</div>
                     </div>
                     <div class="news-list">
-                        ${data.ai.map(item => `
-                            <div class="news-item" onclick="openNewsLink('${item.url}')">
+                        ${data.ai.map((item, index) => `
+                            <div class="news-item" onclick="openNewsLink('${item.url}')" data-url="${item.url}" tabindex="0" role="button" aria-label="뉴스 기사 열기: ${item.title}">
                                 <div class="news-title">${item.title}</div>
                                 <div class="news-meta">
                                     <span class="news-source">${item.source}</span>
@@ -430,41 +502,137 @@
             `;
         }
 
-        // 뉴스 링크 열기 함수
+        // 뉴스 링크 열기 함수 (개선된 버전)
+        async function fetchRSSNews() {
+            try {
+                // RSS2JSON 서비스 사용 (무료)
+                const rssToJsonAPI = 'https://api.rss2json.com/v1/api.json';
+                
+                // 다양한 RSS 피드
+                const hrRssFeeds = [
+                    'https://feeds.feedburner.com/hbr', // Harvard Business Review
+                    'https://www.shrm.org/about-shrm/news-media/rssfeed.aspx' // SHRM
+                ];
+                
+                const aiRssFeeds = [
+                    'https://feeds.feedburner.com/venturebeat/SZYF', // VentureBeat AI
+                    'https://techcrunch.com/category/artificial-intelligence/feed/' // TechCrunch AI
+                ];
+
+                // RSS 피드 처리 함수
+                const processRSSFeed = async (feedUrl) => {
+                    try {
+                        const response = await fetch(`${rssToJsonAPI}?rss_url=${encodeURIComponent(feedUrl)}&count=3`);
+                        const data = await response.json();
+                        
+                        if (data.status === 'ok') {
+                            return data.items.map(item => ({
+                                title: item.title || '제목 없음',
+                                source: data.feed?.title || '출처 불명',
+                                time: formatTimeAgo(item.pubDate),
+                                summary: item.description?.replace(/<[^>]*>/g, '').substring(0, 150) + '...' || '요약 없음',
+                                url: item.link
+                            }));
+                        }
+                        return [];
+                    } catch (error) {
+                        console.error('RSS 피드 처리 실패:', error);
+                        return [];
+                    }
+                };
+
+                // 모든 RSS 피드에서 데이터 가져오기
+                const hrNewsPromises = hrRssFeeds.map(processRSSFeed);
+                const aiNewsPromises = aiRssFeeds.map(processRSSFeed);
+
+                const hrResults = await Promise.all(hrNewsPromises);
+                const aiResults = await Promise.all(aiNewsPromises);
+
+                // 결과 합치기
+                const hrNews = hrResults.flat().slice(0, 5);
+                const aiNews = aiResults.flat().slice(0, 5);
+
+                return { hr: hrNews, ai: aiNews };
+
+            } catch (error) {
+                console.error('RSS 뉴스 가져오기 실패:', error);
+                return generateSampleNews();
+            }
+        }
         function openNewsLink(url) {
-            if (url && url.trim() !== '') {
-                window.open(url, '_blank', 'noopener,noreferrer');
-            } else {
+            // URL 유효성 검사
+            if (!url || url.trim() === '') {
                 alert('해당 뉴스의 링크가 없습니다.');
+                return;
+            }
+            
+            // URL이 http:// 또는 https://로 시작하지 않으면 추가
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+            
+            try {
+                // 새 탭에서 링크 열기
+                const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+                
+                // 팝업 차단기로 인해 창이 열리지 않은 경우
+                if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                    // 사용자에게 팝업 허용 안내
+                    if (confirm('팝업이 차단되었습니다. 링크를 직접 방문하시겠습니까?\n\n' + url)) {
+                        window.location.href = url;
+                    }
+                }
+            } catch (error) {
+                console.error('링크 열기 오류:', error);
+                alert('링크를 열 수 없습니다. URL을 확인해주세요.');
             }
         }
 
-        // 뉴스 새로고침 함수
+        // 뉴스 새로고침 함수 (API 연동 버전)
         async function refreshNews() {
             const status = document.getElementById('status');
-            status.textContent = '뉴스를 업데이트하는 중...';
+            status.textContent = '최신 뉴스를 가져오는 중...';
             
             // 로딩 표시
-            document.getElementById('newsGrid').innerHTML = '<div class="loading">최신 뉴스를 가져오는 중입니다...</div>';
+            document.getElementById('newsGrid').innerHTML = '<div class="loading">실시간 뉴스를 불러오는 중입니다...</div>';
             
-            // 실제로는 여기서 API 호출을 할 수 있습니다
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            // 샘플 데이터 생성 (시간을 랜덤하게 변경)
-            newsData = generateSampleNews();
-            newsData.hr.forEach(item => {
-                const hours = Math.floor(Math.random() * 12) + 1;
-                item.time = `${hours}시간 전`;
-            });
-            newsData.ai.forEach(item => {
-                const hours = Math.floor(Math.random() * 12) + 1;
-                item.time = `${hours}시간 전`;
-            });
-            
-            renderNews(newsData);
-            
-            const now = new Date();
-            status.textContent = `마지막 업데이트: ${now.toLocaleString('ko-KR')}`;
+            try {
+                try {
+                    // API 키가 설정되어 있으면 실제 뉴스 가져오기
+                    if (NEWS_API_KEY && NEWS_API_KEY !== 'YOUR_API_KEY_HERE') {
+                        newsData = await fetchRealNews();
+                        status.textContent = `✅ 실시간 뉴스 업데이트 완료 - ${new Date().toLocaleString('ko-KR')}`;
+                    } else {
+                        // API 키가 없으면 RSS 피드 시도
+                        newsData = await fetchRSSNews();
+                        status.textContent = `📡 RSS 피드 뉴스 업데이트 완료 - ${new Date().toLocaleString('ko-KR')}`;
+                    }
+                } catch (error) {
+                    console.error('뉴스 API 실패, 샘플 데이터 사용:', error);
+                    // 모든 API 실패 시 샘플 데이터 사용
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    newsData = generateSampleNews();
+                    newsData.hr.forEach(item => {
+                        const hours = Math.floor(Math.random() * 12) + 1;
+                        item.time = `${hours}시간 전`;
+                    });
+                    newsData.ai.forEach(item => {
+                        const hours = Math.floor(Math.random() * 12) + 1;
+                        item.time = `${hours}시간 전`;
+                    });
+                    status.textContent = `📰 샘플 뉴스 표시 중 (실시간 뉴스를 보려면 API 키를 설정하세요) - ${new Date().toLocaleString('ko-KR')}`;
+                }
+                
+                renderNews(newsData);
+                
+            } catch (error) {
+                console.error('뉴스 업데이트 실패:', error);
+                status.textContent = `❌ 뉴스 업데이트 실패 - ${new Date().toLocaleString('ko-KR')}`;
+                
+                // 오류 시 샘플 데이터로 폴백
+                newsData = generateSampleNews();
+                renderNews(newsData);
+            }
         }
 
         // 자동 새로고침 토글
@@ -503,6 +671,16 @@
             link.click();
             document.body.removeChild(link);
         }
+
+        // 키보드 접근성 지원 (Enter 키로도 뉴스 열기)
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && event.target.classList.contains('news-item')) {
+                const url = event.target.getAttribute('data-url');
+                if (url) {
+                    openNewsLink(url);
+                }
+            }
+        });
 
         // 초기 로드
         window.addEventListener('load', () => {
