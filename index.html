@@ -375,7 +375,7 @@
             try {
                 const rssToJsonAPI = 'https://api.rss2json.com/v1/api.json';
                 
-                // 네이버 뉴스 RSS 피드들
+                // 네이버 뉴스 RSS 피드들 (정확한 주소)
                 const naverRssFeeds = {
                     it: 'https://rss.news.naver.com/services/news/rss.nhn?cid=227', // IT/과학
                     economy: 'https://rss.news.naver.com/services/news/rss.nhn?cid=101', // 경제
@@ -383,67 +383,108 @@
                 };
 
                 // RSS 피드 처리 함수
-                const processNaverRSSFeed = async (feedUrl, category) => {
+                const processNaverRSSFeed = async (feedUrl, categoryName) => {
                     try {
-                        const response = await fetch(`${rssToJsonAPI}?rss_url=${encodeURIComponent(feedUrl)}&count=10`);
+                        const response = await fetch(`${rssToJsonAPI}?rss_url=${encodeURIComponent(feedUrl)}&count=15&api_key=gprm02k7smshgc2er7khfyedu3vbfuipqsb8uh`);
                         const data = await response.json();
                         
-                        if (data.status === 'ok') {
+                        if (data.status === 'ok' && data.items) {
                             return data.items.map(item => ({
-                                title: item.title || '제목 없음',
-                                source: `네이버뉴스 (${category})`,
+                                title: item.title?.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>') || '제목 없음',
+                                source: `네이버뉴스 (${categoryName})`,
                                 time: formatTimeAgo(item.pubDate),
-                                summary: item.description?.replace(/<[^>]*>/g, '').substring(0, 150) + '...' || '요약 없음',
+                                summary: item.description?.replace(/<[^>]*>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').substring(0, 150) + '...' || '요약 없음',
                                 url: item.link,
-                                category: category
+                                category: categoryName,
+                                originalCategory: categoryName
                             }));
                         }
                         return [];
                     } catch (error) {
-                        console.error(`네이버 RSS 피드 처리 실패 (${category}):`, error);
+                        console.error(`네이버 RSS 피드 처리 실패 (${categoryName}):`, error);
                         return [];
                     }
                 };
 
+                console.log('네이버 RSS 피드에서 뉴스 가져오는 중...');
+
                 // 모든 RSS 피드에서 데이터 가져오기
-                const itNews = await processNaverRSSFeed(naverRssFeeds.it, 'IT/과학');
-                const economyNews = await processNaverRSSFeed(naverRssFeeds.economy, '경제');
-                const societyNews = await processNaverRSSFeed(naverRssFeeds.society, '사회');
+                const [itNews, economyNews, societyNews] = await Promise.all([
+                    processNaverRSSFeed(naverRssFeeds.it, 'IT/과학'),
+                    processNaverRSSFeed(naverRssFeeds.economy, '경제'),
+                    processNaverRSSFeed(naverRssFeeds.society, '사회')
+                ]);
+
+                console.log('수집된 뉴스 개수:', {
+                    IT: itNews.length,
+                    경제: economyNews.length,
+                    사회: societyNews.length
+                });
 
                 // 키워드로 필터링
                 const allNews = [...itNews, ...economyNews, ...societyNews];
                 
-                const hrKeywords = ['인사', 'HR', '채용', '근무', '직장', '조직', '인적자원', '관리'];
-                const aiKeywords = ['AI', '인공지능', '머신러닝', 'ChatGPT', '딥러닝', '로봇', '자동화', '알고리즘'];
+                // HR 관련 키워드 (더 포괄적으로)
+                const hrKeywords = [
+                    '인사', 'HR', '채용', '구인', '구직', '취업', '면접', '근무', '직장', '직원', '조직', 
+                    '인적자원', '관리', '승진', '연봉', '급여', '복지', '워라밸', '재택근무', '하이브리드',
+                    '리더십', '조직문화', '성과평가', '교육', '훈련', '퇴사', '이직', '헤드헌팅',
+                    '노동', '고용', '일자리', '근로', '회사', '기업문화', '직무', '커리어'
+                ];
+                
+                // AI 관련 키워드 (더 포괄적으로)
+                const aiKeywords = [
+                    'AI', '인공지능', '머신러닝', '딥러닝', 'ChatGPT', 'GPT', '로봇', '자동화', 
+                    '알고리즘', '빅데이터', '데이터', '신경망', '학습', '예측', '분석',
+                    '음성인식', '이미지인식', '자연어처리', 'NLP', '컴퓨터비전', 
+                    '스마트', '지능형', '무인', '자율', '디지털전환', 'DX', '4차산업',
+                    '테크', '기술', 'IT', '소프트웨어', '플랫폼', '클라우드'
+                ];
 
-                const hrNews = allNews.filter(item => 
-                    hrKeywords.some(keyword => 
-                        item.title.includes(keyword) || item.summary.includes(keyword)
-                    )
-                ).slice(0, 5);
+                // HR 뉴스 필터링
+                const hrNews = allNews.filter(item => {
+                    const titleAndSummary = (item.title + ' ' + item.summary).toLowerCase();
+                    return hrKeywords.some(keyword => 
+                        titleAndSummary.includes(keyword.toLowerCase())
+                    );
+                }).slice(0, 5);
 
-                const aiNews = allNews.filter(item => 
-                    aiKeywords.some(keyword => 
-                        item.title.includes(keyword) || item.summary.includes(keyword)
-                    )
-                ).slice(0, 5);
+                // AI 뉴스 필터링
+                const aiNews = allNews.filter(item => {
+                    const titleAndSummary = (item.title + ' ' + item.summary).toLowerCase();
+                    return aiKeywords.some(keyword => 
+                        titleAndSummary.includes(keyword.toLowerCase())
+                    );
+                }).slice(0, 5);
 
-                // 충분한 뉴스가 없으면 IT 뉴스로 채우기
-                if (aiNews.length < 3) {
-                    const additionalAI = itNews.slice(0, 5 - aiNews.length);
-                    aiNews.push(...additionalAI);
-                }
-
+                // HR 뉴스가 부족하면 경제 뉴스에서 기업 관련 뉴스 추가
                 if (hrNews.length < 3) {
-                    const additionalHR = economyNews.filter(item => 
-                        ['기업', '회사', '직원', '업무'].some(keyword => 
-                            item.title.includes(keyword) || item.summary.includes(keyword)
-                        )
-                    ).slice(0, 5 - hrNews.length);
+                    const additionalHR = economyNews.filter(item => {
+                        const titleAndSummary = (item.title + ' ' + item.summary).toLowerCase();
+                        return ['기업', '회사', '직원', '업무', '사업', '경영'].some(keyword => 
+                            titleAndSummary.includes(keyword)
+                        ) && !hrNews.find(existing => existing.title === item.title);
+                    }).slice(0, 5 - hrNews.length);
                     hrNews.push(...additionalHR);
                 }
 
-                return { hr: hrNews, ai: aiNews };
+                // AI 뉴스가 부족하면 IT 뉴스 추가
+                if (aiNews.length < 3) {
+                    const additionalAI = itNews.filter(item => 
+                        !aiNews.find(existing => existing.title === item.title)
+                    ).slice(0, 5 - aiNews.length);
+                    aiNews.push(...additionalAI);
+                }
+
+                console.log('필터링 결과:', {
+                    HR: hrNews.length,
+                    AI: aiNews.length
+                });
+
+                return { 
+                    hr: hrNews.slice(0, 5), 
+                    ai: aiNews.slice(0, 5) 
+                };
 
             } catch (error) {
                 console.error('네이버 RSS 뉴스 가져오기 실패:', error);
